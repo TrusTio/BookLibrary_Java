@@ -8,6 +8,11 @@ import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
 import com.vaadin.ui.*;
 
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 @Theme("mytheme")
 public class MyUI extends UI {
@@ -44,7 +49,28 @@ public class MyUI extends UI {
 
         searchLayout.addComponents(searchLabel, isbnTF, nameTF, authorTF, dateTF, searchButton);
 
+        // SQL connection part
 
+        Connection connection = MethodsSQL.establishConnection("jdbc:mysql://localhost:3306/book_library", "root", "root");
+        if(connection!=null) System.out.println("Connection successful");
+        Statement stmt = MethodsSQL.createStatement(connection);
+        if(stmt!=null) System.out.println("Statement successful");
+        ResultSet res = MethodsSQL.createResult(stmt, "SELECT * FROM books");
+        if(res!=null) System.out.println("ResultSet successful");
+        // Grid part
+        ArrayList<Book> books = MethodsSQL.getBooksList(res);
+
+        Grid<Book> grid = new Grid<>();
+        grid.setItems(books);
+        grid.addColumn(Book::getIsbn).setCaption("ISBN");
+        grid.addColumn(Book::getName).setCaption("Name");
+        grid.addColumn(Book::getAuthor).setCaption("Author");
+        grid.addColumn(Book::getDate).setCaption("Date");
+        grid.addColumn(Book::getPrice).setCaption("Price");
+        grid.addColumn(Book::getQuantity).setCaption("Quantity");
+        grid.setWidth("900px");
+
+        leftLayout.addComponent(grid);
         setContent(mainLayout);
     }
 

@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 public class MethodsSQL {
     public static Connection establishConnection(String url, String username, String password) { //estabilishing connection without the try/catch
@@ -47,5 +48,23 @@ public class MethodsSQL {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static ArrayList<Book> getBooksList(ResultSet rs) {
+        ArrayList<Book> books = new ArrayList<Book>();
+        try {
+            while (rs.next()) {
+                books.add(new Book(rs.getString(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4),
+                        rs.getDouble(5),
+                        rs.getInt(6)
+                ));
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return books;
     }
 }
