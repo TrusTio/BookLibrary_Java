@@ -1,15 +1,15 @@
 package com.mylibrary;
 
 public class Book {
-    private String isbn, name, author, date;
-    private Double price;
+    private String isbn, name, author, year;
+    private double price;
     private int quantity;
 
-    public Book(String isbn, String name, String author, String date, Double price, int quantity) {
+    public Book(String isbn, String name, String author, String year, double price, int quantity) {
         this.isbn = isbn;
         this.name = name;
         this.author = author;
-        this.date = date;
+        this.year = year;
         this.price = price;
         this.quantity = quantity;
     }
@@ -26,11 +26,11 @@ public class Book {
         return author;
     }
 
-    public String getDate() {
-        return date;
+    public String getYear() {
+        return year;
     }
 
-    public Double getPrice() {
+    public double getPrice() {
         return price;
     }
 
@@ -50,15 +50,32 @@ public class Book {
         this.author = author;
     }
 
-    public void setDate(String date) {
-        this.date = date;
+    public void setYear(String year) {
+        this.year = year;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    //can't use the int getters/setters on a text field binder
+    public String getTextQuantity() {
+        return String.valueOf(this.quantity);
+    }
+
+    public void setTextQuantity(String textQuantity) {
+        this.quantity = Integer.parseInt(textQuantity);
+    }
+
+    public String getTextPrice() {
+        return String.valueOf(this.price);
+    }
+
+    public void setTextPrice(String textPrice) {
+        this.price = Double.parseDouble(textPrice);
     }
 }
