@@ -1,10 +1,8 @@
 package com.mylibrary;
 
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+
+import java.sql.*;
 import java.util.ArrayList;
 
 public class MethodsSQL {
@@ -42,12 +40,34 @@ public class MethodsSQL {
     }
 
     //update the database with the given sql statement
-    public static void updateDB(Statement stmt, String sql) {
+    public static void updateDB(Statement stmt, String sql) throws SQLIntegrityConstraintViolationException {
         try {
             stmt.executeUpdate(sql);
-        } catch (Exception e) {
+        }catch(SQLIntegrityConstraintViolationException e){
+            throw new SQLIntegrityConstraintViolationException();
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void addBook(Book someBook, Statement stmt) throws SQLIntegrityConstraintViolationException {
+        updateDB(stmt,
+                "INSERT INTO books (`ISBN`, `Name`, `Author`, `Year`, `Price`, `Quantity`)"
+                        + "VALUES ('" + someBook.getIsbn() + "',"
+                        + "'" + someBook.getName() + "',"
+                        + "'" + someBook.getAuthor() + "',"
+                        + "'" + someBook.getYear() + "',"
+                        + "'" + someBook.getPrice() + "',"
+                        + "'" + someBook.getQuantity() + "')"
+        );
+
+    }
+    //escaping the apostrophe problem during database update
+    public static String SQLEscape(String pStr ){
+        String mStr;
+        mStr = pStr.replace( "'" , "''" );
+        return mStr;
     }
 
     public static ArrayList<Book> getBooksList(ResultSet rs) {

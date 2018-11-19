@@ -5,7 +5,6 @@ import javax.servlet.annotation.WebServlet;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.data.Binder;
-import com.vaadin.data.validator.StringLengthValidator;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
 import com.vaadin.ui.*;
@@ -25,11 +24,17 @@ public class MyUI extends UI {
         leftLayout.addComponent(searchLayout);
         mainLayout.addComponents(leftLayout, addBookLayout);
 
+        //connecting to the SQL database
+        Connection connection = MethodsSQL.establishConnection("jdbc:mysql://localhost:3306/book_library", "root", "root");
+        // if(connection!=null) System.out.println("Connection successful");
+        Statement stmt = MethodsSQL.createStatement(connection);
+        // if(stmt!=null) System.out.println("Statement successful");
 
         // add book layout
         Binder<Book> binder = new Binder<>();
 
         Label addBookLabel = new Label("Add a book");
+
         TextField isbn = new TextField("ISBN");
         isbn.setMaxLength(13);
         binder.forField(isbn)
@@ -39,13 +44,13 @@ public class MyUI extends UI {
         TextField name = new TextField("Name");
         name.setMaxLength(40);
         binder.forField(name)
-                .withValidator(new StringLengthValidator("Name must be between 3 and 40 characters", 3, 40))
+                .withValidator(ValidatorFactory.createStringValidator("name"))
                 .bind(Book::getName, Book::setName);
 
         TextField author = new TextField("Author");
         author.setMaxLength(40);
         binder.forField(author)
-                .withValidator(new StringLengthValidator("Must be between 3 and 40 numbers", 3, 40))
+                .withValidator(ValidatorFactory.createStringValidator("author"))
                 .bind(Book::getAuthor, Book::setAuthor);
 
         TextField year = new TextField("Publishing year");
@@ -66,6 +71,34 @@ public class MyUI extends UI {
                 .bind(Book::getTextQuantity, Book::setTextQuantity);
 
         Button addButton = new Button("Add book");
+        addButton.addClickListener(clickEvent -> {
+                    if (connection != null) { // showing error if there is no connection to the database when pressed
+                        if (ValidatorFactory.validFields()) { //checks if the fields are valid
+                                try {
+                                    MethodsSQL.addBook(
+                                            new Book(
+                                                    isbn.getValue(),
+                                                    MethodsSQL.SQLEscape(name.getValue()),
+                                                    MethodsSQL.SQLEscape(author.getValue()),
+                                                    year.getValue(),
+                                                    price.getValue(),
+                                                    quantity.getValue()
+                                            ),
+                                            stmt);
+                                    Notification.show("Book successfully added!");
+                                } catch(SQLIntegrityConstraintViolationException e){ //duplicate primary key exception(ISBN)
+                                    Notification.show("Failed to add book!\nBook with such an ISBN is already in the database!");
+                                }
+                            //Notification.show("Book successfully added!");
+                        } else {
+                            Notification.show("Failed to add book!\nOne of the fields doesn't fit the requirements");
+                        }
+
+                    } else {
+                        Notification.show("Failed to add book!\nNo connection to the database established!");
+                    }
+                }
+        );
 
         addBookLayout.addComponents(addBookLabel, isbn, name, author, year, price, quantity, addButton);
 
@@ -80,13 +113,7 @@ public class MyUI extends UI {
 
         searchLayout.addComponents(searchLabel, isbnTF, nameTF, authorTF, yearTF, searchButton);
 
-        // SQL connection
-
-        Connection connection = MethodsSQL.establishConnection("jdbc:mysql://localhost:3306/book_library", "root", "root");
-        // if(connection!=null) System.out.println("Connection successful");
-        Statement stmt = MethodsSQL.createStatement(connection);
-        // if(stmt!=null) System.out.println("Statement successful");
-        ResultSet res = MethodsSQL.createResult(stmt, "SELECT * FROM books");
+        ResultSet res = MethodsSQL.createResult(stmt, "SELECT * FROM books"); // result set for the grid below
         // if(res!=null) System.out.println("ResultSet successful");
 
         // Grid part

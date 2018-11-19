@@ -13,6 +13,14 @@ public class Book {
         this.price = price;
         this.quantity = quantity;
     }
+    public Book(String isbn, String name, String author, String year, String price, String quantity) {
+        this.isbn = isbn;
+        this.name = name;
+        this.author = author;
+        this.year = year;
+        this.price = Double.parseDouble(price);
+        this.quantity = Integer.parseInt(quantity);
+    }
 
     public String getIsbn() {
         return isbn;

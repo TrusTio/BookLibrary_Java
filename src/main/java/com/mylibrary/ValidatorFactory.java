@@ -6,10 +6,13 @@ import com.vaadin.data.Validator;
 import java.util.Calendar;
 
 public class ValidatorFactory {
+    private static boolean isValidIsbn, isValidName, isValidAuthor, isValidYear, isValidPrice, isValidQuantity;
 
     public static Validator<String> createStringValidator(String type) {
+
         if (type.equals("isbn")) {
             return (Validator<String>) (value, context) -> {
+                isValidIsbn=false;
                 if (value.length() < 9) return ValidationResult.error("The length should be more than 9 numbers!");
                 try {
                     int number = Integer.parseInt(value.substring(0, 7));
@@ -18,6 +21,29 @@ public class ValidatorFactory {
                 } catch (NumberFormatException e) {
                     return ValidationResult.error("Must be a valid ISBN containing only numbers!");
                 }
+                isValidIsbn=true;
+                return ValidationResult.ok();
+            };
+        }
+
+        if(type.equals("name")){
+            return (Validator<String>) (value, context) -> {
+                isValidName=false;
+                if(value.length()<3 || value.length()>40){
+                    return ValidationResult.error("Book name must be between 3 and 40 characters");
+                }
+                isValidName=true;
+                return ValidationResult.ok();
+            };
+        }
+
+        if(type.equals("author")){
+            return (Validator<String>) (value, context) -> {
+                isValidAuthor=false;
+                if(value.length()<3 || value.length()>40){
+                    return ValidationResult.error("Author name must be between 3 and 40 characters");
+                }
+                isValidAuthor=true;
                 return ValidationResult.ok();
             };
         }
@@ -25,6 +51,7 @@ public class ValidatorFactory {
         int year = Calendar.getInstance().get(Calendar.YEAR);
         if (type.equals("year")) {
             return (Validator<String>) (value, context) -> {
+                isValidYear=false;
                 if (value.length() < 4) return ValidationResult.error("Must be a valid year!");
                 try {
                     int number = Integer.parseInt(value);
@@ -32,29 +59,35 @@ public class ValidatorFactory {
                 } catch (NumberFormatException e) {
                     return ValidationResult.error("Must be a valid year!");
                 }
-
+                isValidYear =true;
                 return ValidationResult.ok();
             };
         }
 
         if (type.equals("quantity")) {
             return (Validator<String>) (value, context) -> {
+                isValidQuantity=false;
+                if(value.length()<1) return ValidationResult.error("Must be a valid quantity!");
                 try {
                     int quantity = Integer.parseInt(value); // checking if it's a valid number
                 } catch (NumberFormatException e) {
                     return ValidationResult.error("Must be a valid quantity!");
                 }
+                isValidQuantity=true;
                 return ValidationResult.ok();
             };
         }
 
-        if(type.equals("price")){
-            return (Validator<String>) (value, context) ->{
+        if (type.equals("price")) {
+            return (Validator<String>) (value, context) -> {
+                isValidPrice=false;
+                if(value.length()<1) return ValidationResult.error("Must be a valid price!");
                 try {
                     double price = Double.parseDouble(value); // checking if it's a valid double number
                 } catch (NumberFormatException e) {
                     return ValidationResult.error("Must be a valid price!");
                 }
+                isValidPrice=true;
                 return ValidationResult.ok();
             };
 
@@ -62,4 +95,12 @@ public class ValidatorFactory {
 
         return null;
     }
+
+    public static boolean validFields(){
+        if(isValidIsbn && isValidName && isValidAuthor && isValidYear && isValidPrice && isValidQuantity){
+            return true;
+        }
+        return false;
+    }
+
 }
