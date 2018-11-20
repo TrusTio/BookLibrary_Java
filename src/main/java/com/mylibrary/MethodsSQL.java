@@ -5,23 +5,21 @@ package com.mylibrary;
 import java.sql.*;
 import java.util.ArrayList;
 
-public class MethodsSQL {
-    public static Connection establishConnection(String url, String username, String password) { //estabilishing connection without the try/catch
+class MethodsSQL {
+    static Connection establishConnection(String url, String username, String password) { //estabilishing connection without the try/catch
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection(url, username, password);
-            return connection;
+            return DriverManager.getConnection(url, username, password);
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
         return null;
     }
 
     //create a statement
-    public static Statement createStatement(Connection connection) {
+    static Statement createStatement(Connection connection) {
         try {
-            Statement stmt = connection.createStatement();
-            return stmt;
+            return connection.createStatement();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -29,10 +27,9 @@ public class MethodsSQL {
     }
 
     // create result with the given query
-    public static ResultSet createResult(Statement stmt, String query) {
+    static ResultSet createResult(Statement stmt, String query) {
         try {
-            ResultSet res = stmt.executeQuery(query);
-            return res;
+            return stmt.executeQuery(query);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -40,7 +37,7 @@ public class MethodsSQL {
     }
 
     //update the database with the given sql statement
-    public static void updateDB(Statement stmt, String sql) throws SQLIntegrityConstraintViolationException {
+    private static void updateDB(Statement stmt, String sql) throws SQLIntegrityConstraintViolationException {
         try {
             stmt.executeUpdate(sql);
         }catch(SQLIntegrityConstraintViolationException e){
@@ -51,7 +48,7 @@ public class MethodsSQL {
         }
     }
 
-    public static void addBook(Book someBook, Statement stmt) throws SQLIntegrityConstraintViolationException {
+    static void addBook(Book someBook, Statement stmt) throws SQLIntegrityConstraintViolationException {
         updateDB(stmt,
                 "INSERT INTO books (`ISBN`, `Name`, `Author`, `Year`, `Price`, `Quantity`)"
                         + "VALUES ('" + someBook.getIsbn() + "',"
@@ -64,14 +61,14 @@ public class MethodsSQL {
 
     }
     //escaping the apostrophe problem during database update
-    public static String SQLEscape(String pStr ){
+    static String SQLEscape(String pStr){
         String mStr;
         mStr = pStr.replace( "'" , "''" );
         return mStr;
     }
 
-    public static ArrayList<Book> getBooksList(ResultSet rs) {
-        ArrayList<Book> books = new ArrayList<Book>();
+    static ArrayList<Book> getBooksList(ResultSet rs) {
+        ArrayList<Book> books = new ArrayList<>();
         try {
             while (rs.next()) {
                 books.add(new Book(rs.getString(1),
@@ -83,8 +80,9 @@ public class MethodsSQL {
                 ));
             }
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
         return books;
     }
+
 }

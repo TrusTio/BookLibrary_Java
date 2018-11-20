@@ -5,10 +5,10 @@ import com.vaadin.data.Validator;
 
 import java.util.Calendar;
 
-public class ValidatorFactory {
+class ValidatorFactory {
     private static boolean isValidIsbn, isValidName, isValidAuthor, isValidYear, isValidPrice, isValidQuantity;
 
-    public static Validator<String> createStringValidator(String type) {
+    static Validator<String> createStringValidator(String type) {
 
         if (type.equals("isbn")) {
             return (Validator<String>) (value, context) -> {
@@ -96,11 +96,8 @@ public class ValidatorFactory {
         return null;
     }
 
-    public static boolean validFields(){
-        if(isValidIsbn && isValidName && isValidAuthor && isValidYear && isValidPrice && isValidQuantity){
-            return true;
-        }
-        return false;
+    static boolean validFields(){
+        return isValidIsbn && isValidName && isValidAuthor && isValidYear && isValidPrice && isValidQuantity;
     }
 
 }

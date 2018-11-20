@@ -23,6 +23,7 @@ public class MyUI extends UI {
         FormLayout searchLayout = new FormLayout();
         leftLayout.addComponent(searchLayout);
         mainLayout.addComponents(leftLayout, addBookLayout);
+        Grid<Book> grid = new Grid<>();
 
         //connecting to the SQL database
         Connection connection = MethodsSQL.establishConnection("jdbc:mysql://localhost:3306/book_library", "root", "root");
@@ -85,6 +86,8 @@ public class MyUI extends UI {
                                                     quantity.getValue()
                                             ),
                                             stmt);
+                                    //updating the grid content after successfully added book
+                                    grid.setItems(MethodsSQL.getBooksList(MethodsSQL.createResult(stmt, "SELECT * FROM books")));
                                     Notification.show("Book successfully added!");
                                 } catch(SQLIntegrityConstraintViolationException e){ //duplicate primary key exception(ISBN)
                                     Notification.show("Failed to add book!\nBook with such an ISBN is already in the database!");
@@ -119,7 +122,6 @@ public class MyUI extends UI {
         // Grid part
         ArrayList<Book> books = MethodsSQL.getBooksList(res);
 
-        Grid<Book> grid = new Grid<>();
         grid.setItems(books);
         grid.addColumn(Book::getIsbn).setCaption("ISBN");
         grid.addColumn(Book::getName).setCaption("Name");
@@ -128,6 +130,7 @@ public class MyUI extends UI {
         grid.addColumn(Book::getPrice).setCaption("Price");
         grid.addColumn(Book::getQuantity).setCaption("Quantity");
         grid.setWidth("900px");
+
 
         leftLayout.addComponent(grid);
         setContent(mainLayout);
