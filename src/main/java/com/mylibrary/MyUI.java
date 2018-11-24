@@ -5,31 +5,98 @@ import javax.servlet.annotation.WebServlet;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.data.Binder;
+import com.vaadin.data.ValueProvider;
+import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
+import com.vaadin.shared.ui.ValueChangeMode;
 import com.vaadin.ui.*;
+import com.vaadin.ui.components.grid.HeaderRow;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.*;
 import java.util.ArrayList;
-
+import java.util.Iterator;
+import java.util.List;
 
 @Theme("mytheme")
 public class MyUI extends UI {
+
+    private static ListDataProvider<Book> dataProvider; // declared here so i can update it's content with the method
+                                                        // and being able to update grid's content after adding a book without refreshing the page
+    private static void updateData(ArrayList<Book> books){
+        dataProvider = new ListDataProvider<>(books);
+    }
+
     @Override
     protected void init(VaadinRequest vaadinRequest) {
         HorizontalLayout mainLayout = new HorizontalLayout(); // the main layout that contains everything
         VerticalLayout addBookLayout = new VerticalLayout(); // layout for the adding book part
-        VerticalLayout leftLayout = new VerticalLayout();   // layout for the search book and grid part
+        VerticalLayout leftLayout = new VerticalLayout();   // layout for grid part
         FormLayout searchLayout = new FormLayout();
         leftLayout.addComponent(searchLayout);
         mainLayout.addComponents(leftLayout, addBookLayout);
-        Grid<Book> grid = new Grid<>();
 
         //connecting to the SQL database
         Connection connection = MethodsSQL.establishConnection("jdbc:mysql://localhost:3306/book_library", "root", "root");
         // if(connection!=null) System.out.println("Connection successful");
         Statement stmt = MethodsSQL.createStatement(connection);
         // if(stmt!=null) System.out.println("Statement successful");
+        ResultSet res = MethodsSQL.createResult(stmt, "SELECT * FROM books"); // result set for the grid below
+        // if(res!=null) System.out.println("ResultSet successful");
+
+        // Grid part
+
+        ArrayList<Book> books = MethodsSQL.getBooksList(res);
+        Grid<Book> bookGrid= new Grid<>();
+        updateData(books);
+        bookGrid.setDataProvider(dataProvider);
+        List<ValueProvider<Book, String>> valueProviders= new ArrayList<>();
+
+        valueProviders.add(Book::getIsbn);
+        valueProviders.add(Book::getName);
+        valueProviders.add(Book::getAuthor);
+        valueProviders.add(Book::getYear);
+        valueProviders.add(Book::getTextPrice);
+        valueProviders.add(Book::getTextQuantity);
+
+        Iterator<ValueProvider<Book, String>> iterator = valueProviders
+                .iterator();
+
+        bookGrid.addColumn(iterator.next()).setCaption("ISBN").setWidth(170);
+        bookGrid.addColumn(iterator.next()).setCaption("Name");
+        bookGrid.addColumn(iterator.next()).setCaption("Author");
+        bookGrid.addColumn(iterator.next()).setCaption("Year").setWidth(100);
+        bookGrid.addColumn(iterator.next()).setCaption("Price").setWidth(110);
+        bookGrid.addColumn(iterator.next()).setCaption("Quantity").setWidth(100);
+
+        HeaderRow filterRow = bookGrid.appendHeaderRow();
+
+        Iterator<ValueProvider<Book, String>> iterator2 = valueProviders
+                .iterator();
+
+        bookGrid.getColumns().forEach(column ->{
+            TextField field = new TextField();
+            ValueProvider<Book, String> valueProvider = iterator2.next();
+
+            field.addValueChangeListener(event -> dataProvider
+                    .addFilter(book -> StringUtils.containsIgnoreCase(
+                            valueProvider.apply(book), field.getValue())));
+
+            field.setValueChangeMode(ValueChangeMode.EAGER);
+
+            filterRow.getCell(column).setComponent(field);
+            field.setSizeFull();
+            field.setPlaceholder("Filter");
+
+        });
+        bookGrid.setWidth("1000px");
+
+
+        leftLayout.addComponent(bookGrid);
+
+
+
 
         // add book layout
         Binder<Book> binder = new Binder<>();
@@ -87,12 +154,12 @@ public class MyUI extends UI {
                                             ),
                                             stmt);
                                     //updating the grid content after successfully added book
-                                    grid.setItems(MethodsSQL.getBooksList(MethodsSQL.createResult(stmt, "SELECT * FROM books")));
+                                    updateData(MethodsSQL.getBooksList(MethodsSQL.createResult(stmt, "SELECT * FROM books")));
+                                    bookGrid.setDataProvider(dataProvider);
                                     Notification.show("Book successfully added!");
                                 } catch(SQLIntegrityConstraintViolationException e){ //duplicate primary key exception(ISBN)
                                     Notification.show("Failed to add book!\nBook with such an ISBN is already in the database!");
                                 }
-                            //Notification.show("Book successfully added!");
                         } else {
                             Notification.show("Failed to add book!\nOne of the fields doesn't fit the requirements");
                         }
@@ -105,37 +172,8 @@ public class MyUI extends UI {
 
         addBookLayout.addComponents(addBookLabel, isbn, name, author, year, price, quantity, addButton);
 
-
-        // search book layout
-        Label searchLabel = new Label("Search");
-        TextField isbnTF = new TextField("ISBN");
-        TextField nameTF = new TextField("Name");
-        TextField authorTF = new TextField("Author");
-        TextField yearTF = new TextField("Publishing year");
-        Button searchButton = new Button("Search");
-
-        searchLayout.addComponents(searchLabel, isbnTF, nameTF, authorTF, yearTF, searchButton);
-
-        ResultSet res = MethodsSQL.createResult(stmt, "SELECT * FROM books"); // result set for the grid below
-        // if(res!=null) System.out.println("ResultSet successful");
-
-        // Grid part
-        ArrayList<Book> books = MethodsSQL.getBooksList(res);
-
-        grid.setItems(books);
-        grid.addColumn(Book::getIsbn).setCaption("ISBN");
-        grid.addColumn(Book::getName).setCaption("Name");
-        grid.addColumn(Book::getAuthor).setCaption("Author");
-        grid.addColumn(Book::getYear).setCaption("Year");
-        grid.addColumn(Book::getPrice).setCaption("Price");
-        grid.addColumn(Book::getQuantity).setCaption("Quantity");
-        grid.setWidth("900px");
-
-
-        leftLayout.addComponent(grid);
         setContent(mainLayout);
     }
-
     @WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
     @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
     public static class MyUIServlet extends VaadinServlet {
