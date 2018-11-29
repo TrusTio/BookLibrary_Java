@@ -13,6 +13,8 @@ import com.vaadin.shared.ui.ValueChangeMode;
 import com.vaadin.ui.*;
 import com.vaadin.ui.components.grid.HeaderRow;
 import org.apache.commons.lang3.StringUtils;
+import org.vaadin.dialogs.ConfirmDialog;
+
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -22,37 +24,37 @@ import java.util.List;
 @Theme("mytheme")
 public class MyUI extends UI {
 
-    private static ListDataProvider<Book> dataProvider; // declared here so i can update it's content with the method
-                                                        // and being able to update grid's content after adding a book without refreshing the page
-    private static void updateData(ArrayList<Book> books){
+    private static ListDataProvider<Book> dataProvider; // let's me update the grid's content without refresh this way
+
+    private static void updateData(ArrayList<Book> books) {
         dataProvider = new ListDataProvider<>(books);
     }
 
     @Override
     protected void init(VaadinRequest vaadinRequest) {
         HorizontalLayout mainLayout = new HorizontalLayout(); // the main layout that contains everything
+        VerticalLayout bookGridLayout = new VerticalLayout();  // layout for grid part
         VerticalLayout addBookLayout = new VerticalLayout(); // layout for the adding book part
-        VerticalLayout leftLayout = new VerticalLayout();   // layout for grid part
-        FormLayout searchLayout = new FormLayout();
-        leftLayout.addComponent(searchLayout);
-        mainLayout.addComponents(leftLayout, addBookLayout);
+        mainLayout.addComponents(bookGridLayout, addBookLayout);
+
 
         //connecting to the SQL database
         Connection connection = MethodsSQL.establishConnection("jdbc:mysql://localhost:3306/book_library", "root", "root");
         // if(connection!=null) System.out.println("Connection successful");
-        Statement stmt = MethodsSQL.createStatement(connection);
-        // if(stmt!=null) System.out.println("Statement successful");
-        ResultSet res = MethodsSQL.createResult(stmt, "SELECT * FROM books"); // result set for the grid below
-        // if(res!=null) System.out.println("ResultSet successful");
+        Statement statementSQL = MethodsSQL.createStatement(connection);
+        // if(statementSQL!=null) System.out.println("Statement successful");
+        ResultSet resultSetSQL = MethodsSQL.createResult(statementSQL, "SELECT * FROM books"); // result set for the grid below
+        // if(resultSetSQL!=null) System.out.println("ResultSet successful");
 
         // Grid part
 
-        ArrayList<Book> books = MethodsSQL.getBooksList(res);
-        Grid<Book> bookGrid= new Grid<>();
+        ArrayList<Book> books = MethodsSQL.getBooksList(resultSetSQL);
+        Grid<Book> bookGrid = new Grid<>();
+        bookGrid.setWidth("1000px");
         updateData(books);
         bookGrid.setDataProvider(dataProvider);
-        List<ValueProvider<Book, String>> valueProviders= new ArrayList<>();
 
+        List<ValueProvider<Book, String>> valueProviders = new ArrayList<>();
         valueProviders.add(Book::getIsbn);
         valueProviders.add(Book::getName);
         valueProviders.add(Book::getAuthor);
@@ -62,20 +64,19 @@ public class MyUI extends UI {
 
         Iterator<ValueProvider<Book, String>> iterator = valueProviders
                 .iterator();
-
-        bookGrid.addColumn(iterator.next()).setCaption("ISBN").setWidth(170);
+        bookGrid.addColumn(iterator.next()).setCaption("ISBN").setWidth(150);
         bookGrid.addColumn(iterator.next()).setCaption("Name");
         bookGrid.addColumn(iterator.next()).setCaption("Author");
-        bookGrid.addColumn(iterator.next()).setCaption("Year").setWidth(100);
+        bookGrid.addColumn(iterator.next()).setCaption("Year").setWidth(80);
         bookGrid.addColumn(iterator.next()).setCaption("Price").setWidth(110);
-        bookGrid.addColumn(iterator.next()).setCaption("Quantity").setWidth(100);
+        bookGrid.addColumn(iterator.next()).setCaption("Quantity").setWidth(80);
 
         HeaderRow filterRow = bookGrid.appendHeaderRow();
 
         Iterator<ValueProvider<Book, String>> iterator2 = valueProviders
                 .iterator();
 
-        bookGrid.getColumns().forEach(column ->{
+        bookGrid.getColumns().forEach(column -> {
             TextField field = new TextField();
             ValueProvider<Book, String> valueProvider = iterator2.next();
 
@@ -90,12 +91,25 @@ public class MyUI extends UI {
             field.setPlaceholder("Filter");
 
         });
-        bookGrid.setWidth("1000px");
 
+        bookGrid.addComponentColumn(book -> {
+            Button button = new Button("Delete");
+            button.addClickListener(click ->
+                    ConfirmDialog.show(this, "Please Confirm:", "Are you really sure you want to delete this entry?\n"+ book.getBookInfo(),
+                            "Yes", "No", (ConfirmDialog.Listener) dialog -> {
+                                if (dialog.isConfirmed()) {
+                                    // Confirmed to continue
+                                    MethodsSQL.deleteBook(book.getIsbn(),statementSQL);
+                                    Notification.show("Successfully deleted.");
+                                }
+                            })
 
-        leftLayout.addComponent(bookGrid);
+            );
 
+            return button;
+        }).setWidth(90);
 
+        bookGridLayout.addComponent(bookGrid);
 
 
         // add book layout
@@ -142,24 +156,24 @@ public class MyUI extends UI {
         addButton.addClickListener(clickEvent -> {
                     if (connection != null) { // showing error if there is no connection to the database when pressed
                         if (ValidatorFactory.validFields()) { //checks if the fields are valid
-                                try {
-                                    MethodsSQL.addBook(
-                                            new Book(
-                                                    isbn.getValue(),
-                                                    MethodsSQL.SQLEscape(name.getValue()),
-                                                    MethodsSQL.SQLEscape(author.getValue()),
-                                                    year.getValue(),
-                                                    price.getValue(),
-                                                    quantity.getValue()
-                                            ),
-                                            stmt);
-                                    //updating the grid content after successfully added book
-                                    updateData(MethodsSQL.getBooksList(MethodsSQL.createResult(stmt, "SELECT * FROM books")));
-                                    bookGrid.setDataProvider(dataProvider);
-                                    Notification.show("Book successfully added!");
-                                } catch(SQLIntegrityConstraintViolationException e){ //duplicate primary key exception(ISBN)
-                                    Notification.show("Failed to add book!\nBook with such an ISBN is already in the database!");
-                                }
+                            try {
+                                MethodsSQL.addBook(
+                                        new Book(
+                                                isbn.getValue(),
+                                                MethodsSQL.SQLEscape(name.getValue()),
+                                                MethodsSQL.SQLEscape(author.getValue()),
+                                                year.getValue(),
+                                                price.getValue(),
+                                                quantity.getValue()
+                                        ),
+                                        statementSQL);
+                                //updating the grid content after successfully added book
+                                updateData(MethodsSQL.getBooksList(MethodsSQL.createResult(statementSQL, "SELECT * FROM books")));
+                                bookGrid.setDataProvider(dataProvider);
+                                Notification.show("Book successfully added!");
+                            } catch (SQLIntegrityConstraintViolationException e) { //duplicate primary key exception(ISBN)
+                                Notification.show("Failed to add book!\nBook with such an ISBN is already in the database!");
+                            }
                         } else {
                             Notification.show("Failed to add book!\nOne of the fields doesn't fit the requirements");
                         }
@@ -171,9 +185,9 @@ public class MyUI extends UI {
         );
 
         addBookLayout.addComponents(addBookLabel, isbn, name, author, year, price, quantity, addButton);
-
         setContent(mainLayout);
     }
+
     @WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
     @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
     public static class MyUIServlet extends VaadinServlet {

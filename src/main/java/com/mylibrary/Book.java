@@ -22,6 +22,10 @@ class Book {
         this.quantity = Integer.parseInt(quantity);
     }
 
+    String getBookInfo(){
+        return getIsbn() + " | " + getName() + " | " + getAuthor() + " | " + getYear();
+    }
+
     String getIsbn() {
         return isbn;
     }

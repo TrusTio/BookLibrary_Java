@@ -49,7 +49,7 @@ class MethodsSQL {
         }
     }
 
-    static void addBook(Book someBook, Statement stmt) throws SQLIntegrityConstraintViolationException {
+    static void addBook(Book someBook, Statement stmt) throws SQLIntegrityConstraintViolationException { // for the duplicate primary key exception(ISBN)
         updateDB(stmt,
                 "INSERT INTO books (`ISBN`, `Name`, `Author`, `Year`, `Price`, `Quantity`)"
                         + "VALUES ('" + someBook.getIsbn() + "',"
@@ -59,7 +59,14 @@ class MethodsSQL {
                         + "'" + someBook.getPrice() + "',"
                         + "'" + someBook.getQuantity() + "')"
         );
+    }
 
+    static void deleteBook(String isbn, Statement stmt) {
+        try {
+            updateDB(stmt,"DELETE FROM books WHERE books.ISBN = "+ isbn);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
     }
     //escaping the apostrophe problem during database update
     static String SQLEscape(String pStr){

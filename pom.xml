@@ -78,9 +78,15 @@
 			<artifactId>commons-lang3</artifactId>
 			<version>3.0</version>
 		</dependency>
+        <dependency>
+            <groupId>org.vaadin.addon</groupId>
+            <artifactId>confirmdialog</artifactId>
+            <version>3.2.0</version>
+        </dependency>
 
 
-	</dependencies>
+
+    </dependencies>
 
 	<build>
 		<plugins>
@@ -164,7 +170,7 @@
 						<enabled>true</enabled>
 					</snapshots>
 				</repository>
-			</repositories>
+            </repositories>
 			<pluginRepositories>
 				<pluginRepository>
 					<id>vaadin-prereleases</id>
