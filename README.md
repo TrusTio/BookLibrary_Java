@@ -1,7 +1,7 @@
 my-library
 ==============
 
-Template for a simple Vaadin application that only requires a Servlet 3.0 container to run.
+Simple library GUI made with the help of Vaadin 8 framework
 
 
 Workflow
