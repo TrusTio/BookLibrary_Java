@@ -1,7 +1,7 @@
 my-library
 ==============
 
-Simple library GUI made with the help of Vaadin 8 framework
+Simple library GUI made with the help of Vaadin 8 framework. You can add and delete books from the MySQL database and filter(search) about certain book.
 
 
 Workflow
